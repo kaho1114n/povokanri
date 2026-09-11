@@ -192,7 +192,7 @@
   </div>
   <div class="subtitle">コードの登録・コピー・使用予定・使用履歴の管理ができます（このブラウザに保存されます）</div>
   <div id="storageWarning" class="storage-warning" style="display:none;">
-    ⚠️ この環境では自動保存が利用できないようです（Claudeのチャット外でファイルを直接開いた場合など）。データが消える前に「エクスポート」で保存し、次に開いたときは「インポート」で復元してください。
+    ⚠️ この端末・ブラウザでは自動保存が利用できないようです（プライベートブラウズモード中など）。データが消える前に「エクスポート」で保存し、次に開いたときは「インポート」で復元してください。
   </div>
 
   <!-- コード一覧 -->
@@ -321,10 +321,14 @@ function setStatus(elId, msg, isError) {
 }
 
 function isStorageAvailable() {
-  return typeof window !== 'undefined'
-    && window.storage
-    && typeof window.storage.get === 'function'
-    && typeof window.storage.set === 'function';
+  try {
+    const testKey = '__povo_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 function showStorageWarning() {
@@ -332,8 +336,8 @@ function showStorageWarning() {
   if (el) el.style.display = 'block';
 }
 
-/* ---------- storage ---------- */
-async function loadData() {
+/* ---------- storage (localStorage) ---------- */
+function loadData() {
   if (!isStorageAvailable()) {
     showStorageWarning();
     codes = [];
@@ -342,36 +346,35 @@ async function loadData() {
     renderAll();
     return;
   }
-  let storageFailed = false;
   try {
-    const res = await window.storage.get(CODES_KEY, false);
-    codes = res ? JSON.parse(res.value) : [];
+    const raw = localStorage.getItem(CODES_KEY);
+    codes = raw ? JSON.parse(raw) : [];
   } catch (e) { codes = []; }
   try {
-    const res = await window.storage.get(HISTORY_KEY, false);
-    history = res ? JSON.parse(res.value) : [];
+    const raw = localStorage.getItem(HISTORY_KEY);
+    history = raw ? JSON.parse(raw) : [];
   } catch (e) { history = []; }
   try {
-    const res = await window.storage.get(SCHEDULE_KEY, false);
-    schedule = res ? JSON.parse(res.value) : [];
+    const raw = localStorage.getItem(SCHEDULE_KEY);
+    schedule = raw ? JSON.parse(raw) : [];
   } catch (e) { schedule = []; }
 
   renderAll();
 }
 
-async function saveCodes() {
+function saveCodes() {
   if (!isStorageAvailable()) { showStorageWarning(); return; }
-  try { await window.storage.set(CODES_KEY, JSON.stringify(codes), false); }
+  try { localStorage.setItem(CODES_KEY, JSON.stringify(codes)); }
   catch (e) { setStatus('codeStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
-async function saveHistory() {
+function saveHistory() {
   if (!isStorageAvailable()) { showStorageWarning(); return; }
-  try { await window.storage.set(HISTORY_KEY, JSON.stringify(history), false); }
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }
   catch (e) { setStatus('historyStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
-async function saveSchedule() {
+function saveSchedule() {
   if (!isStorageAvailable()) { showStorageWarning(); return; }
-  try { await window.storage.set(SCHEDULE_KEY, JSON.stringify(schedule), false); }
+  try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule)); }
   catch (e) { setStatus('scheduleStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
 
