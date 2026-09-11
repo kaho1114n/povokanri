@@ -63,6 +63,8 @@
     white-space: nowrap;
   }
   td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:nth-child(even) { background: #fafbfd; }
+  tbody tr:hover { background: #f2eefc; }
   input[type="text"], input[type="datetime-local"], input[type="date"], select {
     width: 100%;
     padding: 8px 10px;
@@ -106,7 +108,7 @@
   }
   .btn-add:hover { background: #f4f0fd; }
   .col-del { width: 40px; text-align: center; }
-  .col-actions { width: 90px; text-align: center; }
+  .col-actions { width: 150px; text-align: center; }
   .empty-msg { color: var(--sub); font-size: 13px; padding: 16px 4px; text-align: center; }
   .entry-form {
     display: flex;
@@ -141,36 +143,14 @@
     margin-bottom: 16px;
     line-height: 1.6;
   }
-  @media (max-width: 640px) {
-    table.responsive-table thead { display: none; }
-    table.responsive-table, table.responsive-table tbody,
-    table.responsive-table tr, table.responsive-table td {
-      display: block;
-      width: 100%;
-    }
-    table.responsive-table tr {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 10px;
-      padding: 8px 8px 4px;
-    }
-    table.responsive-table td {
-      border-bottom: none;
-      padding: 6px 2px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    table.responsive-table td::before {
-      content: attr(data-label);
-      flex: 0 0 64px;
-      font-size: 11px;
-      color: var(--sub);
-      font-weight: 600;
-    }
-    table.responsive-table td > *:not(.code-cell) { flex: 1; min-width: 0; }
-    table.responsive-table td .code-cell { flex: 1; min-width: 0; }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -18px;
+    padding: 0 18px;
   }
+  .table-wrap table { min-width: 640px; }
+  #scheduleTable { min-width: 720px; }
   @media (max-width: 600px) {
     body { padding: 12px; }
     .entry-form { flex-direction: column; align-items: stretch; }
@@ -207,20 +187,27 @@
         <label>コード</label>
         <input type="text" id="newCodeValue" placeholder="コードを入力">
       </div>
+      <div class="field">
+        <label>期限（任意）</label>
+        <input type="datetime-local" id="newCodeExpiry">
+      </div>
       <div class="field" style="flex:0;">
         <button class="btn-primary" id="addCodeBtn" style="white-space:nowrap;">追加する</button>
       </div>
     </div>
-    <table id="codeTable" class="responsive-table">
+    <div class="table-wrap">
+    <table id="codeTable">
       <thead>
         <tr>
-          <th style="width:40%">内容</th>
-          <th style="width:50%">コード</th>
-          <th class="col-del"></th>
+          <th style="width:30%">内容</th>
+          <th style="width:34%">コード</th>
+          <th style="width:16%">期限</th>
+          <th class="col-actions">操作</th>
         </tr>
       </thead>
       <tbody id="codeTableBody"></tbody>
     </table>
+    </div>
     <div id="codeEmptyMsg" class="empty-msg" style="display:none;">まだコードが登録されていません</div>
     <div class="status" id="codeStatus"></div>
   </div>
@@ -245,19 +232,21 @@
         <button class="btn-primary" id="addHistoryBtn" style="white-space:nowrap;">記録する</button>
       </div>
     </div>
-    <table id="historyTable" class="responsive-table">
+    <div class="table-wrap">
+    <table id="historyTable">
       <thead>
         <tr>
-          <th style="width:18%">日時</th>
-          <th style="width:22%">内容</th>
-          <th style="width:20%">コード</th>
+          <th style="width:16%">日時</th>
+          <th style="width:20%">内容</th>
+          <th style="width:18%">コード</th>
           <th style="width:14%">期限</th>
           <th style="width:8%">回数</th>
-          <th class="col-del"></th>
+          <th class="col-actions">操作</th>
         </tr>
       </thead>
       <tbody id="historyTableBody"></tbody>
     </table>
+    </div>
     <div id="historyEmptyMsg" class="empty-msg" style="display:none;">まだ使用履歴がありません</div>
     <div class="status" id="historyStatus"></div>
   </div>
@@ -271,6 +260,10 @@
         <select id="scheduleCodeSelect"></select>
       </div>
       <div class="field">
+        <label>開始日（任意）</label>
+        <input type="datetime-local" id="scheduleStartDate">
+      </div>
+      <div class="field">
         <label>期限（任意）</label>
         <input type="datetime-local" id="scheduleExpiry">
       </div>
@@ -282,28 +275,35 @@
         <button class="btn-primary" id="addScheduleBtn" style="white-space:nowrap;">追加する</button>
       </div>
     </div>
-    <table id="scheduleTable" class="responsive-table">
+    <div class="table-wrap">
+    <table id="scheduleTable">
       <thead>
         <tr>
-          <th style="width:16%">期限</th>
-          <th style="width:20%">内容</th>
-          <th style="width:20%">コード</th>
-          <th style="width:16%">メモ</th>
+          <th style="width:14%">開始日</th>
+          <th style="width:14%">期限</th>
+          <th style="width:18%">内容</th>
+          <th style="width:18%">コード</th>
+          <th style="width:14%">メモ</th>
           <th style="width:8%">回数</th>
           <th class="col-actions">操作</th>
         </tr>
       </thead>
       <tbody id="scheduleTableBody"></tbody>
     </table>
+    </div>
     <div id="scheduleEmptyMsg" class="empty-msg" style="display:none;">まだ使用予定がありません</div>
     <div class="status" id="scheduleStatus"></div>
   </div>
 </div>
 
 <script>
-let codes = [];      // [{id, content, code}]
+let codes = [];      // [{id, content, code, expiry}]
 let history = [];    // [{id, codeId, content, code, datetime, expiry, createdAt}]
-let schedule = [];   // [{id, codeId, content, code, expiry, memo, createdAt}]
+let schedule = [];   // [{id, codeId, content, code, startDate, expiry, memo, createdAt}]
+
+let editingCodeIds = new Set();
+let editingHistoryIds = new Set();
+let editingScheduleIds = new Set();
 
 const CODES_KEY = 'povo-codes';
 const HISTORY_KEY = 'povo-usage-history';
@@ -311,6 +311,57 @@ const SCHEDULE_KEY = 'povo-usage-schedule';
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function formatDT(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  }
+  return fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function makeCopyButton(getText) {
+  const btn = document.createElement('button');
+  btn.className = 'btn-copy';
+  btn.textContent = 'コピー';
+  btn.addEventListener('click', async () => {
+    const text = getText();
+    if (!text) return;
+    await copyToClipboard(text);
+    btn.textContent = 'コピー済';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 1200);
+  });
+  return btn;
+}
+
+function makeActionWrap() {
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.gap = '4px';
+  wrap.style.justifyContent = 'center';
+  wrap.style.flexWrap = 'wrap';
+  return wrap;
 }
 
 function setStatus(elId, msg, isError) {
@@ -397,7 +448,7 @@ function computeOccurrenceMap() {
   }));
   schedule.forEach(s => combined.push({
     code: s.code,
-    key: s.expiry ? new Date(s.expiry).getTime() : s.createdAt,
+    key: s.startDate ? new Date(s.startDate).getTime() : (s.expiry ? new Date(s.expiry).getTime() : s.createdAt),
     type: 'schedule',
     id: s.id
   }));
@@ -424,69 +475,110 @@ function renderCodes() {
 
   codes.forEach((row) => {
     const tr = document.createElement('tr');
+    const isEditing = editingCodeIds.has(row.id);
 
     const tdContent = document.createElement('td');
     tdContent.setAttribute('data-label', '内容');
-    const contentInput = document.createElement('input');
-    contentInput.type = 'text';
-    contentInput.placeholder = '例: 24時間データ使い放題';
-    contentInput.value = row.content;
-    contentInput.addEventListener('input', () => {
-      row.content = contentInput.value;
-      saveCodes();
-      renderCodeSelect('historyCodeSelect');
-      renderCodeSelect('scheduleCodeSelect');
-    });
-    tdContent.appendChild(contentInput);
-
     const tdCode = document.createElement('td');
     tdCode.setAttribute('data-label', 'コード');
-    const codeCell = document.createElement('div');
-    codeCell.className = 'code-cell';
-    const codeInput = document.createElement('input');
-    codeInput.type = 'text';
-    codeInput.placeholder = 'コードを入力';
-    codeInput.value = row.code;
-    codeInput.addEventListener('input', () => {
-      row.code = codeInput.value;
-      saveCodes();
-      renderCodeSelect('historyCodeSelect');
-      renderCodeSelect('scheduleCodeSelect');
-    });
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'btn-copy';
-    copyBtn.textContent = 'コピー';
-    copyBtn.addEventListener('click', async () => {
-      if (!row.code) return;
-      try { await navigator.clipboard.writeText(row.code); }
-      catch (e) { codeInput.select(); document.execCommand('copy'); }
-      copyBtn.textContent = 'コピー済';
-      copyBtn.classList.add('copied');
-      setTimeout(() => { copyBtn.textContent = 'コピー'; copyBtn.classList.remove('copied'); }, 1200);
-    });
-    codeCell.appendChild(codeInput);
-    codeCell.appendChild(copyBtn);
-    tdCode.appendChild(codeCell);
+    const tdExpiry = document.createElement('td');
+    tdExpiry.setAttribute('data-label', '期限');
+    const tdActions = document.createElement('td');
+    tdActions.className = 'col-actions';
+    tdActions.setAttribute('data-label', '操作');
 
-    const tdDel = document.createElement('td');
-    tdDel.className = 'col-del';
-    tdDel.setAttribute('data-label', '削除');
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn-danger';
-    delBtn.textContent = '✕';
-    delBtn.title = '削除';
-    delBtn.addEventListener('click', () => {
-      codes = codes.filter(c => c.id !== row.id);
-      saveCodes();
-      renderCodes();
-      renderCodeSelect('historyCodeSelect');
-      renderCodeSelect('scheduleCodeSelect');
-    });
-    tdDel.appendChild(delBtn);
+    if (isEditing) {
+      const contentInput = document.createElement('input');
+      contentInput.type = 'text';
+      contentInput.placeholder = '例: 24時間データ使い放題';
+      contentInput.value = row.content || '';
+      tdContent.appendChild(contentInput);
+
+      const codeCell = document.createElement('div');
+      codeCell.className = 'code-cell';
+      const codeInput = document.createElement('input');
+      codeInput.type = 'text';
+      codeInput.placeholder = 'コードを入力';
+      codeInput.value = row.code || '';
+      codeCell.appendChild(codeInput);
+      tdCode.appendChild(codeCell);
+
+      const expiryInput = document.createElement('input');
+      expiryInput.type = 'datetime-local';
+      expiryInput.value = row.expiry || '';
+      tdExpiry.appendChild(expiryInput);
+
+      const actionWrap = makeActionWrap();
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn-primary';
+      saveBtn.textContent = '保存';
+      saveBtn.addEventListener('click', () => {
+        if (!codeInput.value.trim()) {
+          setStatus('codeStatus', 'コードを入力してください', true);
+          return;
+        }
+        row.content = contentInput.value.trim();
+        row.code = codeInput.value.trim();
+        row.expiry = expiryInput.value || '';
+        saveCodes();
+        editingCodeIds.delete(row.id);
+        renderCodes();
+        renderCodeSelect('historyCodeSelect');
+        renderCodeSelect('scheduleCodeSelect');
+      });
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-secondary';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.addEventListener('click', () => {
+        editingCodeIds.delete(row.id);
+        renderCodes();
+      });
+      actionWrap.appendChild(saveBtn);
+      actionWrap.appendChild(cancelBtn);
+      tdActions.appendChild(actionWrap);
+    } else {
+      tdContent.textContent = row.content || '(内容未入力)';
+
+      const codeCell = document.createElement('div');
+      codeCell.className = 'code-cell';
+      const codeText = document.createElement('code');
+      codeText.className = 'code-text';
+      codeText.textContent = row.code || '(未入力)';
+      codeCell.appendChild(codeText);
+      codeCell.appendChild(makeCopyButton(() => row.code));
+      tdCode.appendChild(codeCell);
+
+      tdExpiry.textContent = formatDT(row.expiry);
+
+      const actionWrap = makeActionWrap();
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-secondary';
+      editBtn.textContent = '編集';
+      editBtn.addEventListener('click', () => {
+        editingCodeIds.add(row.id);
+        renderCodes();
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.textContent = '✕';
+      delBtn.title = '削除';
+      delBtn.addEventListener('click', () => {
+        codes = codes.filter(c => c.id !== row.id);
+        editingCodeIds.delete(row.id);
+        saveCodes();
+        renderCodes();
+        renderCodeSelect('historyCodeSelect');
+        renderCodeSelect('scheduleCodeSelect');
+      });
+      actionWrap.appendChild(editBtn);
+      actionWrap.appendChild(delBtn);
+      tdActions.appendChild(actionWrap);
+    }
 
     tr.appendChild(tdContent);
     tr.appendChild(tdCode);
-    tr.appendChild(tdDel);
+    tr.appendChild(tdExpiry);
+    tr.appendChild(tdActions);
     tbody.appendChild(tr);
   });
 }
@@ -546,81 +638,123 @@ function renderHistory() {
 
   sortedDesc.forEach(item => {
     const tr = document.createElement('tr');
+    const isEditing = editingHistoryIds.has(item.id);
 
-    // 日時
     const tdDate = document.createElement('td');
     tdDate.setAttribute('data-label', '日時');
-    const dtInput = document.createElement('input');
-    dtInput.type = 'datetime-local';
-    dtInput.value = item.datetime || '';
-    dtInput.addEventListener('change', () => {
-      item.datetime = dtInput.value;
-      saveHistory();
-      renderHistory();
-    });
-    tdDate.appendChild(dtInput);
-
-    // 内容 + コード（同じセレクトで編集可能）
     const tdContent = document.createElement('td');
     tdContent.setAttribute('data-label', '内容');
-    tdContent.textContent = item.content || '(内容未入力)';
-
     const tdCode = document.createElement('td');
     tdCode.setAttribute('data-label', 'コード');
-    const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
-      const c = codes.find(x => x.id === newCodeId);
-      if (!c) return;
-      item.codeId = c.id;
-      item.content = c.content;
-      item.code = c.code;
-      saveHistory();
-      renderHistory();
-    });
-    tdCode.appendChild(codeSelect);
-
-    // 期限
     const tdExpiry = document.createElement('td');
     tdExpiry.setAttribute('data-label', '期限');
-    const expiryInput = document.createElement('input');
-    expiryInput.type = 'datetime-local';
-    expiryInput.value = item.expiry || '';
-    expiryInput.addEventListener('change', () => {
-      item.expiry = expiryInput.value;
-      saveHistory();
-    });
-    tdExpiry.appendChild(expiryInput);
-
-    // 回数
     const tdOcc = document.createElement('td');
     tdOcc.setAttribute('data-label', '回数');
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    const occ = occMap['history-' + item.id] || '?';
-    badge.textContent = occ + '回目';
-    tdOcc.appendChild(badge);
+    const tdActions = document.createElement('td');
+    tdActions.className = 'col-actions';
+    tdActions.setAttribute('data-label', '操作');
 
-    // 削除
-    const tdDel = document.createElement('td');
-    tdDel.className = 'col-del';
-    tdDel.setAttribute('data-label', '削除');
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn-danger';
-    delBtn.textContent = '✕';
-    delBtn.title = '削除';
-    delBtn.addEventListener('click', () => {
-      history = history.filter(h => h.id !== item.id);
-      saveHistory();
-      renderHistory();
-      renderSchedule();
-    });
-    tdDel.appendChild(delBtn);
+    if (isEditing) {
+      const dtInput = document.createElement('input');
+      dtInput.type = 'datetime-local';
+      dtInput.value = item.datetime || '';
+      tdDate.appendChild(dtInput);
+
+      const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
+        const c = codes.find(x => x.id === newCodeId);
+        if (c) tdContent.textContent = c.content || '(内容未入力)';
+      });
+      tdContent.textContent = item.content || '(内容未入力)';
+      tdCode.appendChild(codeSelect);
+
+      const expiryInput = document.createElement('input');
+      expiryInput.type = 'datetime-local';
+      expiryInput.value = item.expiry || '';
+      tdExpiry.appendChild(expiryInput);
+
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = (occMap['history-' + item.id] || '?') + '回目';
+      tdOcc.appendChild(badge);
+
+      const actionWrap = makeActionWrap();
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn-primary';
+      saveBtn.textContent = '保存';
+      saveBtn.addEventListener('click', () => {
+        const chosen = codes.find(c => c.id === codeSelect.value);
+        if (chosen) {
+          item.codeId = chosen.id;
+          item.content = chosen.content;
+          item.code = chosen.code;
+        }
+        item.datetime = dtInput.value || '';
+        item.expiry = expiryInput.value || '';
+        saveHistory();
+        editingHistoryIds.delete(item.id);
+        renderHistory();
+        renderSchedule();
+      });
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-secondary';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.addEventListener('click', () => {
+        editingHistoryIds.delete(item.id);
+        renderHistory();
+      });
+      actionWrap.appendChild(saveBtn);
+      actionWrap.appendChild(cancelBtn);
+      tdActions.appendChild(actionWrap);
+    } else {
+      tdDate.textContent = formatDT(item.datetime);
+      tdContent.textContent = item.content || '(内容未入力)';
+
+      const codeCell = document.createElement('div');
+      codeCell.className = 'code-cell';
+      const codeText = document.createElement('code');
+      codeText.className = 'code-text';
+      codeText.textContent = item.code || '(未入力)';
+      codeCell.appendChild(codeText);
+      codeCell.appendChild(makeCopyButton(() => item.code));
+      tdCode.appendChild(codeCell);
+
+      tdExpiry.textContent = formatDT(item.expiry);
+
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = (occMap['history-' + item.id] || '?') + '回目';
+      tdOcc.appendChild(badge);
+
+      const actionWrap = makeActionWrap();
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-secondary';
+      editBtn.textContent = '編集';
+      editBtn.addEventListener('click', () => {
+        editingHistoryIds.add(item.id);
+        renderHistory();
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.textContent = '✕';
+      delBtn.title = '削除';
+      delBtn.addEventListener('click', () => {
+        history = history.filter(h => h.id !== item.id);
+        editingHistoryIds.delete(item.id);
+        saveHistory();
+        renderHistory();
+        renderSchedule();
+      });
+      actionWrap.appendChild(editBtn);
+      actionWrap.appendChild(delBtn);
+      tdActions.appendChild(actionWrap);
+    }
 
     tr.appendChild(tdDate);
     tr.appendChild(tdContent);
     tr.appendChild(tdCode);
     tr.appendChild(tdExpiry);
     tr.appendChild(tdOcc);
-    tr.appendChild(tdDel);
+    tr.appendChild(tdActions);
     tbody.appendChild(tr);
   });
 }
@@ -663,117 +797,162 @@ function renderSchedule() {
   const occMap = computeOccurrenceMap();
 
   const sortedAsc = [...schedule].sort((a, b) => {
-    const ka = a.expiry ? new Date(a.expiry).getTime() : a.createdAt;
-    const kb = b.expiry ? new Date(b.expiry).getTime() : b.createdAt;
+    const ka = a.startDate ? new Date(a.startDate).getTime() : (a.expiry ? new Date(a.expiry).getTime() : a.createdAt);
+    const kb = b.startDate ? new Date(b.startDate).getTime() : (b.expiry ? new Date(b.expiry).getTime() : b.createdAt);
     return ka - kb;
   });
 
   sortedAsc.forEach(item => {
     const tr = document.createElement('tr');
+    const isEditing = editingScheduleIds.has(item.id);
 
-    // 期限
+    const tdStart = document.createElement('td');
+    tdStart.setAttribute('data-label', '開始日');
     const tdExpiry = document.createElement('td');
     tdExpiry.setAttribute('data-label', '期限');
-    const expiryInput = document.createElement('input');
-    expiryInput.type = 'datetime-local';
-    expiryInput.value = item.expiry || '';
-    expiryInput.addEventListener('change', () => {
-      item.expiry = expiryInput.value;
-      saveSchedule();
-      renderSchedule();
-    });
-    tdExpiry.appendChild(expiryInput);
-
-    // 内容
     const tdContent = document.createElement('td');
     tdContent.setAttribute('data-label', '内容');
-    tdContent.textContent = item.content || '(内容未入力)';
-
-    // コード（編集可能）
     const tdCode = document.createElement('td');
     tdCode.setAttribute('data-label', 'コード');
-    const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
-      const c = codes.find(x => x.id === newCodeId);
-      if (!c) return;
-      item.codeId = c.id;
-      item.content = c.content;
-      item.code = c.code;
-      saveSchedule();
-      renderSchedule();
-    });
-    tdCode.appendChild(codeSelect);
-
-    // メモ
     const tdMemo = document.createElement('td');
     tdMemo.setAttribute('data-label', 'メモ');
-    const memoInput = document.createElement('input');
-    memoInput.type = 'text';
-    memoInput.placeholder = 'メモ';
-    memoInput.value = item.memo || '';
-    memoInput.addEventListener('input', () => {
-      item.memo = memoInput.value;
-      saveSchedule();
-    });
-    tdMemo.appendChild(memoInput);
-
-    // 回数（予定）
     const tdOcc = document.createElement('td');
     tdOcc.setAttribute('data-label', '回数');
-    const badge = document.createElement('span');
-    badge.className = 'badge pending';
-    const occ = occMap['schedule-' + item.id] || '?';
-    badge.textContent = occ + '回目';
-    tdOcc.appendChild(badge);
-
-    // 操作: 履歴へ移動 / 削除
     const tdActions = document.createElement('td');
     tdActions.className = 'col-actions';
     tdActions.setAttribute('data-label', '操作');
-    const actionWrap = document.createElement('div');
-    actionWrap.style.display = 'flex';
-    actionWrap.style.gap = '4px';
-    actionWrap.style.justifyContent = 'center';
 
-    const moveBtn = document.createElement('button');
-    moveBtn.className = 'btn-move';
-    moveBtn.textContent = '履歴へ';
-    moveBtn.title = '使用履歴に移動（使用日時は現在時刻になります。移動後に編集できます）';
-    moveBtn.addEventListener('click', () => {
-      const now = new Date();
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-      const nowLocal = now.toISOString().slice(0, 16);
-      history.push({
-        id: uid(),
-        codeId: item.codeId,
-        content: item.content,
-        code: item.code,
-        datetime: nowLocal,
-        expiry: item.expiry || '',
-        createdAt: Date.now()
+    if (isEditing) {
+      const startInput = document.createElement('input');
+      startInput.type = 'datetime-local';
+      startInput.value = item.startDate || '';
+      tdStart.appendChild(startInput);
+
+      const expiryInput = document.createElement('input');
+      expiryInput.type = 'datetime-local';
+      expiryInput.value = item.expiry || '';
+      tdExpiry.appendChild(expiryInput);
+
+      tdContent.textContent = item.content || '(内容未入力)';
+
+      const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
+        const c = codes.find(x => x.id === newCodeId);
+        if (c) tdContent.textContent = c.content || '(内容未入力)';
       });
-      schedule = schedule.filter(s => s.id !== item.id);
-      saveHistory();
-      saveSchedule();
-      renderHistory();
-      renderSchedule();
-      setStatus('scheduleStatus', '使用履歴に移動しました');
-    });
+      tdCode.appendChild(codeSelect);
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn-danger';
-    delBtn.textContent = '✕';
-    delBtn.title = '削除';
-    delBtn.addEventListener('click', () => {
-      schedule = schedule.filter(s => s.id !== item.id);
-      saveSchedule();
-      renderSchedule();
-      renderHistory();
-    });
+      const memoInput = document.createElement('input');
+      memoInput.type = 'text';
+      memoInput.placeholder = 'メモ';
+      memoInput.value = item.memo || '';
+      tdMemo.appendChild(memoInput);
 
-    actionWrap.appendChild(moveBtn);
-    actionWrap.appendChild(delBtn);
-    tdActions.appendChild(actionWrap);
+      const badge = document.createElement('span');
+      badge.className = 'badge pending';
+      badge.textContent = (occMap['schedule-' + item.id] || '?') + '回目';
+      tdOcc.appendChild(badge);
 
+      const actionWrap = makeActionWrap();
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn-primary';
+      saveBtn.textContent = '保存';
+      saveBtn.addEventListener('click', () => {
+        const chosen = codes.find(c => c.id === codeSelect.value);
+        if (chosen) {
+          item.codeId = chosen.id;
+          item.content = chosen.content;
+          item.code = chosen.code;
+        }
+        item.startDate = startInput.value || '';
+        item.expiry = expiryInput.value || '';
+        item.memo = memoInput.value || '';
+        saveSchedule();
+        editingScheduleIds.delete(item.id);
+        renderSchedule();
+        renderHistory();
+      });
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn-secondary';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.addEventListener('click', () => {
+        editingScheduleIds.delete(item.id);
+        renderSchedule();
+      });
+      actionWrap.appendChild(saveBtn);
+      actionWrap.appendChild(cancelBtn);
+      tdActions.appendChild(actionWrap);
+    } else {
+      tdStart.textContent = formatDT(item.startDate);
+      tdExpiry.textContent = formatDT(item.expiry);
+      tdContent.textContent = item.content || '(内容未入力)';
+
+      const codeCell = document.createElement('div');
+      codeCell.className = 'code-cell';
+      const codeText = document.createElement('code');
+      codeText.className = 'code-text';
+      codeText.textContent = item.code || '(未入力)';
+      codeCell.appendChild(codeText);
+      codeCell.appendChild(makeCopyButton(() => item.code));
+      tdCode.appendChild(codeCell);
+
+      tdMemo.textContent = item.memo || '-';
+
+      const badge = document.createElement('span');
+      badge.className = 'badge pending';
+      badge.textContent = (occMap['schedule-' + item.id] || '?') + '回目';
+      tdOcc.appendChild(badge);
+
+      const actionWrap = makeActionWrap();
+      const moveBtn = document.createElement('button');
+      moveBtn.className = 'btn-move';
+      moveBtn.textContent = '履歴へ';
+      moveBtn.title = '使用履歴に移動（使用日時は現在時刻になります。移動後に編集できます）';
+      moveBtn.addEventListener('click', () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const nowLocal = now.toISOString().slice(0, 16);
+        history.push({
+          id: uid(),
+          codeId: item.codeId,
+          content: item.content,
+          code: item.code,
+          datetime: nowLocal,
+          expiry: item.expiry || '',
+          createdAt: Date.now()
+        });
+        schedule = schedule.filter(s => s.id !== item.id);
+        editingScheduleIds.delete(item.id);
+        saveHistory();
+        saveSchedule();
+        renderHistory();
+        renderSchedule();
+        setStatus('scheduleStatus', '使用履歴に移動しました');
+      });
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-secondary';
+      editBtn.textContent = '編集';
+      editBtn.addEventListener('click', () => {
+        editingScheduleIds.add(item.id);
+        renderSchedule();
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.textContent = '✕';
+      delBtn.title = '削除';
+      delBtn.addEventListener('click', () => {
+        schedule = schedule.filter(s => s.id !== item.id);
+        editingScheduleIds.delete(item.id);
+        saveSchedule();
+        renderSchedule();
+        renderHistory();
+      });
+      actionWrap.appendChild(moveBtn);
+      actionWrap.appendChild(editBtn);
+      actionWrap.appendChild(delBtn);
+      tdActions.appendChild(actionWrap);
+    }
+
+    tr.appendChild(tdStart);
     tr.appendChild(tdExpiry);
     tr.appendChild(tdContent);
     tr.appendChild(tdCode);
@@ -786,6 +965,7 @@ function renderSchedule() {
 
 document.getElementById('addScheduleBtn').addEventListener('click', () => {
   const select = document.getElementById('scheduleCodeSelect');
+  const startInput = document.getElementById('scheduleStartDate');
   const expiryInput = document.getElementById('scheduleExpiry');
   const memoInput = document.getElementById('scheduleMemo');
   if (!select.value) {
@@ -799,6 +979,7 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
     codeId: chosen.id,
     content: chosen.content,
     code: chosen.code,
+    startDate: startInput.value || '',
     expiry: expiryInput.value || '',
     memo: memoInput.value || '',
     createdAt: Date.now()
@@ -806,6 +987,7 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
   saveSchedule();
   renderSchedule();
   renderHistory();
+  startInput.value = '';
   expiryInput.value = '';
   memoInput.value = '';
   setStatus('scheduleStatus', '追加しました');
@@ -815,17 +997,24 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
 document.getElementById('addCodeBtn').addEventListener('click', () => {
   const contentInput = document.getElementById('newCodeContent');
   const codeInput = document.getElementById('newCodeValue');
+  const expiryInput = document.getElementById('newCodeExpiry');
   if (!codeInput.value.trim()) {
     setStatus('codeStatus', 'コードを入力してください', true);
     return;
   }
-  codes.push({ id: uid(), content: contentInput.value.trim(), code: codeInput.value.trim() });
+  codes.push({
+    id: uid(),
+    content: contentInput.value.trim(),
+    code: codeInput.value.trim(),
+    expiry: expiryInput.value || ''
+  });
   saveCodes();
   renderCodes();
   renderCodeSelect('historyCodeSelect');
   renderCodeSelect('scheduleCodeSelect');
   contentInput.value = '';
   codeInput.value = '';
+  expiryInput.value = '';
   setStatus('codeStatus', '追加しました');
   contentInput.focus();
 });
@@ -864,8 +1053,12 @@ document.getElementById('importFile').addEventListener('change', (e) => {
       history = Array.isArray(parsed.history) ? parsed.history : [];
       schedule = Array.isArray(parsed.schedule) ? parsed.schedule : [];
       // 古い形式や不足フィールドを補完
+      codes.forEach(c => { if (c.expiry === undefined) c.expiry = ''; });
       history.forEach(h => { if (!h.createdAt) h.createdAt = Date.now(); if (h.expiry === undefined) h.expiry = ''; });
-      schedule.forEach(s => { if (!s.createdAt) s.createdAt = Date.now(); if (s.memo === undefined) s.memo = ''; if (s.expiry === undefined) s.expiry = ''; });
+      schedule.forEach(s => { if (!s.createdAt) s.createdAt = Date.now(); if (s.memo === undefined) s.memo = ''; if (s.expiry === undefined) s.expiry = ''; if (s.startDate === undefined) s.startDate = ''; });
+      editingCodeIds.clear();
+      editingHistoryIds.clear();
+      editingScheduleIds.clear();
       await saveCodes();
       await saveHistory();
       await saveSchedule();
