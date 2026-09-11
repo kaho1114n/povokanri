@@ -184,7 +184,7 @@
       </div>
       <div class="field">
         <label>期限（任意）</label>
-        <input type="date" id="historyExpiry">
+        <input type="datetime-local" id="historyExpiry">
       </div>
       <div class="field" style="flex:0;">
         <button class="btn-primary" id="addHistoryBtn" style="white-space:nowrap;">記録する</button>
@@ -217,7 +217,7 @@
       </div>
       <div class="field">
         <label>期限（任意）</label>
-        <input type="date" id="scheduleExpiry">
+        <input type="datetime-local" id="scheduleExpiry">
       </div>
       <div class="field">
         <label>メモ（任意）</label>
@@ -356,8 +356,6 @@ function renderCodes() {
       saveCodes();
       renderCodeSelect('historyCodeSelect');
       renderCodeSelect('scheduleCodeSelect');
-      renderHistory();
-      renderSchedule();
     });
     tdContent.appendChild(contentInput);
 
@@ -373,8 +371,6 @@ function renderCodes() {
       saveCodes();
       renderCodeSelect('historyCodeSelect');
       renderCodeSelect('scheduleCodeSelect');
-      renderHistory();
-      renderSchedule();
     });
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-copy';
@@ -500,7 +496,7 @@ function renderHistory() {
     // 期限
     const tdExpiry = document.createElement('td');
     const expiryInput = document.createElement('input');
-    expiryInput.type = 'date';
+    expiryInput.type = 'datetime-local';
     expiryInput.value = item.expiry || '';
     expiryInput.addEventListener('change', () => {
       item.expiry = expiryInput.value;
@@ -590,7 +586,7 @@ function renderSchedule() {
     // 期限
     const tdExpiry = document.createElement('td');
     const expiryInput = document.createElement('input');
-    expiryInput.type = 'date';
+    expiryInput.type = 'datetime-local';
     expiryInput.value = item.expiry || '';
     expiryInput.addEventListener('change', () => {
       item.expiry = expiryInput.value;
