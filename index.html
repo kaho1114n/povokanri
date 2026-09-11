@@ -131,6 +131,46 @@
   .status { font-size: 12px; color: var(--sub); margin-top: 8px; min-height: 16px; }
   code.code-text { font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
   .muted { color: var(--sub); font-size: 12px; }
+  .storage-warning {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  @media (max-width: 640px) {
+    table.responsive-table thead { display: none; }
+    table.responsive-table, table.responsive-table tbody,
+    table.responsive-table tr, table.responsive-table td {
+      display: block;
+      width: 100%;
+    }
+    table.responsive-table tr {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      padding: 8px 8px 4px;
+    }
+    table.responsive-table td {
+      border-bottom: none;
+      padding: 6px 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    table.responsive-table td::before {
+      content: attr(data-label);
+      flex: 0 0 64px;
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 600;
+    }
+    table.responsive-table td > *:not(.code-cell) { flex: 1; min-width: 0; }
+    table.responsive-table td .code-cell { flex: 1; min-width: 0; }
+  }
   @media (max-width: 600px) {
     body { padding: 12px; }
     .entry-form { flex-direction: column; align-items: stretch; }
@@ -151,11 +191,27 @@
     </div>
   </div>
   <div class="subtitle">コードの登録・コピー・使用予定・使用履歴の管理ができます（このブラウザに保存されます）</div>
+  <div id="storageWarning" class="storage-warning" style="display:none;">
+    ⚠️ この環境では自動保存が利用できないようです（Claudeのチャット外でファイルを直接開いた場合など）。データが消える前に「エクスポート」で保存し、次に開いたときは「インポート」で復元してください。
+  </div>
 
   <!-- コード一覧 -->
   <div class="card">
     <h2>🎫 コード一覧</h2>
-    <table id="codeTable">
+    <div class="entry-form">
+      <div class="field">
+        <label>内容</label>
+        <input type="text" id="newCodeContent" placeholder="例: 24時間データ使い放題">
+      </div>
+      <div class="field">
+        <label>コード</label>
+        <input type="text" id="newCodeValue" placeholder="コードを入力">
+      </div>
+      <div class="field" style="flex:0;">
+        <button class="btn-primary" id="addCodeBtn" style="white-space:nowrap;">追加する</button>
+      </div>
+    </div>
+    <table id="codeTable" class="responsive-table">
       <thead>
         <tr>
           <th style="width:40%">内容</th>
@@ -166,7 +222,6 @@
       <tbody id="codeTableBody"></tbody>
     </table>
     <div id="codeEmptyMsg" class="empty-msg" style="display:none;">まだコードが登録されていません</div>
-    <button class="btn-add" id="addCodeBtn">＋ コードを追加</button>
     <div class="status" id="codeStatus"></div>
   </div>
 
@@ -190,7 +245,7 @@
         <button class="btn-primary" id="addHistoryBtn" style="white-space:nowrap;">記録する</button>
       </div>
     </div>
-    <table id="historyTable">
+    <table id="historyTable" class="responsive-table">
       <thead>
         <tr>
           <th style="width:18%">日時</th>
@@ -227,7 +282,7 @@
         <button class="btn-primary" id="addScheduleBtn" style="white-space:nowrap;">追加する</button>
       </div>
     </div>
-    <table id="scheduleTable">
+    <table id="scheduleTable" class="responsive-table">
       <thead>
         <tr>
           <th style="width:16%">期限</th>
@@ -265,8 +320,29 @@ function setStatus(elId, msg, isError) {
   if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
 }
 
+function isStorageAvailable() {
+  return typeof window !== 'undefined'
+    && window.storage
+    && typeof window.storage.get === 'function'
+    && typeof window.storage.set === 'function';
+}
+
+function showStorageWarning() {
+  const el = document.getElementById('storageWarning');
+  if (el) el.style.display = 'block';
+}
+
 /* ---------- storage ---------- */
 async function loadData() {
+  if (!isStorageAvailable()) {
+    showStorageWarning();
+    codes = [];
+    history = [];
+    schedule = [];
+    renderAll();
+    return;
+  }
+  let storageFailed = false;
   try {
     const res = await window.storage.get(CODES_KEY, false);
     codes = res ? JSON.parse(res.value) : [];
@@ -280,23 +356,23 @@ async function loadData() {
     schedule = res ? JSON.parse(res.value) : [];
   } catch (e) { schedule = []; }
 
-  if (codes.length === 0) {
-    codes = [{ id: uid(), content: '', code: '' }];
-  }
   renderAll();
 }
 
 async function saveCodes() {
+  if (!isStorageAvailable()) { showStorageWarning(); return; }
   try { await window.storage.set(CODES_KEY, JSON.stringify(codes), false); }
-  catch (e) { setStatus('codeStatus', '保存に失敗しました', true); }
+  catch (e) { setStatus('codeStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
 async function saveHistory() {
+  if (!isStorageAvailable()) { showStorageWarning(); return; }
   try { await window.storage.set(HISTORY_KEY, JSON.stringify(history), false); }
-  catch (e) { setStatus('historyStatus', '保存に失敗しました', true); }
+  catch (e) { setStatus('historyStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
 async function saveSchedule() {
+  if (!isStorageAvailable()) { showStorageWarning(); return; }
   try { await window.storage.set(SCHEDULE_KEY, JSON.stringify(schedule), false); }
-  catch (e) { setStatus('scheduleStatus', '保存に失敗しました', true); }
+  catch (e) { setStatus('scheduleStatus', '保存に失敗しました', true); showStorageWarning(); }
 }
 
 function renderAll() {
@@ -347,6 +423,7 @@ function renderCodes() {
     const tr = document.createElement('tr');
 
     const tdContent = document.createElement('td');
+    tdContent.setAttribute('data-label', '内容');
     const contentInput = document.createElement('input');
     contentInput.type = 'text';
     contentInput.placeholder = '例: 24時間データ使い放題';
@@ -360,6 +437,7 @@ function renderCodes() {
     tdContent.appendChild(contentInput);
 
     const tdCode = document.createElement('td');
+    tdCode.setAttribute('data-label', 'コード');
     const codeCell = document.createElement('div');
     codeCell.className = 'code-cell';
     const codeInput = document.createElement('input');
@@ -389,6 +467,7 @@ function renderCodes() {
 
     const tdDel = document.createElement('td');
     tdDel.className = 'col-del';
+    tdDel.setAttribute('data-label', '削除');
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-danger';
     delBtn.textContent = '✕';
@@ -467,6 +546,7 @@ function renderHistory() {
 
     // 日時
     const tdDate = document.createElement('td');
+    tdDate.setAttribute('data-label', '日時');
     const dtInput = document.createElement('input');
     dtInput.type = 'datetime-local';
     dtInput.value = item.datetime || '';
@@ -479,9 +559,11 @@ function renderHistory() {
 
     // 内容 + コード（同じセレクトで編集可能）
     const tdContent = document.createElement('td');
+    tdContent.setAttribute('data-label', '内容');
     tdContent.textContent = item.content || '(内容未入力)';
 
     const tdCode = document.createElement('td');
+    tdCode.setAttribute('data-label', 'コード');
     const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
       const c = codes.find(x => x.id === newCodeId);
       if (!c) return;
@@ -495,6 +577,7 @@ function renderHistory() {
 
     // 期限
     const tdExpiry = document.createElement('td');
+    tdExpiry.setAttribute('data-label', '期限');
     const expiryInput = document.createElement('input');
     expiryInput.type = 'datetime-local';
     expiryInput.value = item.expiry || '';
@@ -506,6 +589,7 @@ function renderHistory() {
 
     // 回数
     const tdOcc = document.createElement('td');
+    tdOcc.setAttribute('data-label', '回数');
     const badge = document.createElement('span');
     badge.className = 'badge';
     const occ = occMap['history-' + item.id] || '?';
@@ -515,6 +599,7 @@ function renderHistory() {
     // 削除
     const tdDel = document.createElement('td');
     tdDel.className = 'col-del';
+    tdDel.setAttribute('data-label', '削除');
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-danger';
     delBtn.textContent = '✕';
@@ -585,6 +670,7 @@ function renderSchedule() {
 
     // 期限
     const tdExpiry = document.createElement('td');
+    tdExpiry.setAttribute('data-label', '期限');
     const expiryInput = document.createElement('input');
     expiryInput.type = 'datetime-local';
     expiryInput.value = item.expiry || '';
@@ -597,10 +683,12 @@ function renderSchedule() {
 
     // 内容
     const tdContent = document.createElement('td');
+    tdContent.setAttribute('data-label', '内容');
     tdContent.textContent = item.content || '(内容未入力)';
 
     // コード（編集可能）
     const tdCode = document.createElement('td');
+    tdCode.setAttribute('data-label', 'コード');
     const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
       const c = codes.find(x => x.id === newCodeId);
       if (!c) return;
@@ -614,6 +702,7 @@ function renderSchedule() {
 
     // メモ
     const tdMemo = document.createElement('td');
+    tdMemo.setAttribute('data-label', 'メモ');
     const memoInput = document.createElement('input');
     memoInput.type = 'text';
     memoInput.placeholder = 'メモ';
@@ -626,6 +715,7 @@ function renderSchedule() {
 
     // 回数（予定）
     const tdOcc = document.createElement('td');
+    tdOcc.setAttribute('data-label', '回数');
     const badge = document.createElement('span');
     badge.className = 'badge pending';
     const occ = occMap['schedule-' + item.id] || '?';
@@ -635,6 +725,7 @@ function renderSchedule() {
     // 操作: 履歴へ移動 / 削除
     const tdActions = document.createElement('td');
     tdActions.className = 'col-actions';
+    tdActions.setAttribute('data-label', '操作');
     const actionWrap = document.createElement('div');
     actionWrap.style.display = 'flex';
     actionWrap.style.gap = '4px';
@@ -719,11 +810,21 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
 
 /* ---------- 共通 ---------- */
 document.getElementById('addCodeBtn').addEventListener('click', () => {
-  codes.push({ id: uid(), content: '', code: '' });
+  const contentInput = document.getElementById('newCodeContent');
+  const codeInput = document.getElementById('newCodeValue');
+  if (!codeInput.value.trim()) {
+    setStatus('codeStatus', 'コードを入力してください', true);
+    return;
+  }
+  codes.push({ id: uid(), content: contentInput.value.trim(), code: codeInput.value.trim() });
   saveCodes();
   renderCodes();
   renderCodeSelect('historyCodeSelect');
   renderCodeSelect('scheduleCodeSelect');
+  contentInput.value = '';
+  codeInput.value = '';
+  setStatus('codeStatus', '追加しました');
+  contentInput.focus();
 });
 
 /* ---------- エクスポート / インポート ---------- */
@@ -762,7 +863,6 @@ document.getElementById('importFile').addEventListener('change', (e) => {
       // 古い形式や不足フィールドを補完
       history.forEach(h => { if (!h.createdAt) h.createdAt = Date.now(); if (h.expiry === undefined) h.expiry = ''; });
       schedule.forEach(s => { if (!s.createdAt) s.createdAt = Date.now(); if (s.memo === undefined) s.memo = ''; if (s.expiry === undefined) s.expiry = ''; });
-      if (codes.length === 0) codes = [{ id: uid(), content: '', code: '' }];
       await saveCodes();
       await saveHistory();
       await saveSchedule();
