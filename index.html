@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>povoプリペイドコード管理</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --border: #e2e4e8;
+    --text: #1f2328;
+    --sub: #6b7280;
+    --accent: #6c3ce9;
+    --accent-hover: #5a2fd1;
+    --danger: #e5484d;
+    --danger-hover: #c93f43;
+    --success: #16a34a;
+    --warn: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .subtitle { color: var(--sub); font-size: 13px; margin-bottom: 24px; }
+  .io-buttons { display: flex; gap: 8px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 16px;
+    margin: 0 0 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left;
+    font-size: 12px;
+    color: var(--sub);
+    font-weight: 600;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  input[type="text"], input[type="datetime-local"], input[type="date"], select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .code-cell { display: flex; gap: 6px; align-items: center; }
+  .code-cell input { font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-copy { background: #eef0f4; color: var(--text); white-space: nowrap; }
+  .btn-copy:hover { background: #dfe2e8; }
+  .btn-copy.copied { background: var(--success); color: #fff; }
+  .btn-secondary { background: #eef0f4; color: var(--text); white-space: nowrap; }
+  .btn-secondary:hover { background: #dfe2e8; }
+  .btn-danger { background: transparent; color: var(--danger); padding: 6px 8px; }
+  .btn-danger:hover { background: #fdecec; }
+  .btn-move { background: #ecfdf5; color: var(--success); white-space: nowrap; }
+  .btn-move:hover { background: #d4f7e6; }
+  .btn-add {
+    background: transparent;
+    color: var(--accent);
+    border: 1px dashed var(--accent);
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  .btn-add:hover { background: #f4f0fd; }
+  .col-del { width: 40px; text-align: center; }
+  .col-actions { width: 90px; text-align: center; }
+  .empty-msg { color: var(--sub); font-size: 13px; padding: 16px 4px; text-align: center; }
+  .entry-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .entry-form .field { flex: 1; min-width: 150px; }
+  .entry-form label { display: block; font-size: 12px; color: var(--sub); margin-bottom: 4px; }
+  .badge {
+    display: inline-block;
+    background: #f0ebfd;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.pending { background: #fef3c7; color: var(--warn); }
+  .status { font-size: 12px; color: var(--sub); margin-top: 8px; min-height: 16px; }
+  code.code-text { font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+  .muted { color: var(--sub); font-size: 12px; }
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    .entry-form { flex-direction: column; align-items: stretch; }
+    .header-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-row">
+    <div>
+      <h1>📶 povoプリペイドコード管理</h1>
+    </div>
+    <div class="io-buttons">
+      <button class="btn-secondary" id="exportBtn">⬇ エクスポート</button>
+      <button class="btn-secondary" id="importBtn">⬆ インポート</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+    </div>
+  </div>
+  <div class="subtitle">コードの登録・コピー・使用予定・使用履歴の管理ができます（このブラウザに保存されます）</div>
+
+  <!-- コード一覧 -->
+  <div class="card">
+    <h2>🎫 コード一覧</h2>
+    <table id="codeTable">
+      <thead>
+        <tr>
+          <th style="width:40%">内容</th>
+          <th style="width:50%">コード</th>
+          <th class="col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="codeTableBody"></tbody>
+    </table>
+    <div id="codeEmptyMsg" class="empty-msg" style="display:none;">まだコードが登録されていません</div>
+    <button class="btn-add" id="addCodeBtn">＋ コードを追加</button>
+    <div class="status" id="codeStatus"></div>
+  </div>
+
+  <!-- 使用履歴 -->
+  <div class="card">
+    <h2>🕘 使用履歴</h2>
+    <div class="entry-form">
+      <div class="field">
+        <label>使用したコード</label>
+        <select id="historyCodeSelect"></select>
+      </div>
+      <div class="field">
+        <label>使用日時（任意）</label>
+        <input type="datetime-local" id="historyDatetime">
+      </div>
+      <div class="field">
+        <label>期限（任意）</label>
+        <input type="date" id="historyExpiry">
+      </div>
+      <div class="field" style="flex:0;">
+        <button class="btn-primary" id="addHistoryBtn" style="white-space:nowrap;">記録する</button>
+      </div>
+    </div>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th style="width:18%">日時</th>
+          <th style="width:22%">内容</th>
+          <th style="width:20%">コード</th>
+          <th style="width:14%">期限</th>
+          <th style="width:8%">回数</th>
+          <th class="col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="historyTableBody"></tbody>
+    </table>
+    <div id="historyEmptyMsg" class="empty-msg" style="display:none;">まだ使用履歴がありません</div>
+    <div class="status" id="historyStatus"></div>
+  </div>
+
+  <!-- 使用予定 -->
+  <div class="card">
+    <h2>📅 使用予定</h2>
+    <div class="entry-form">
+      <div class="field">
+        <label>使用予定のコード</label>
+        <select id="scheduleCodeSelect"></select>
+      </div>
+      <div class="field">
+        <label>期限（任意）</label>
+        <input type="date" id="scheduleExpiry">
+      </div>
+      <div class="field">
+        <label>メモ（任意）</label>
+        <input type="text" id="scheduleMemo" placeholder="例: 旅行前に使う">
+      </div>
+      <div class="field" style="flex:0;">
+        <button class="btn-primary" id="addScheduleBtn" style="white-space:nowrap;">追加する</button>
+      </div>
+    </div>
+    <table id="scheduleTable">
+      <thead>
+        <tr>
+          <th style="width:16%">期限</th>
+          <th style="width:20%">内容</th>
+          <th style="width:20%">コード</th>
+          <th style="width:16%">メモ</th>
+          <th style="width:8%">回数</th>
+          <th class="col-actions">操作</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleTableBody"></tbody>
+    </table>
+    <div id="scheduleEmptyMsg" class="empty-msg" style="display:none;">まだ使用予定がありません</div>
+    <div class="status" id="scheduleStatus"></div>
+  </div>
+</div>
+
+<script>
+let codes = [];      // [{id, content, code}]
+let history = [];    // [{id, codeId, content, code, datetime, expiry, createdAt}]
+let schedule = [];   // [{id, codeId, content, code, expiry, memo, createdAt}]
+
+const CODES_KEY = 'povo-codes';
+const HISTORY_KEY = 'povo-usage-history';
+const SCHEDULE_KEY = 'povo-usage-schedule';
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function setStatus(elId, msg, isError) {
+  const el = document.getElementById(elId);
+  el.textContent = msg || '';
+  el.style.color = isError ? 'var(--danger)' : 'var(--sub)';
+  if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+}
+
+/* ---------- storage ---------- */
+async function loadData() {
+  try {
+    const res = await window.storage.get(CODES_KEY, false);
+    codes = res ? JSON.parse(res.value) : [];
+  } catch (e) { codes = []; }
+  try {
+    const res = await window.storage.get(HISTORY_KEY, false);
+    history = res ? JSON.parse(res.value) : [];
+  } catch (e) { history = []; }
+  try {
+    const res = await window.storage.get(SCHEDULE_KEY, false);
+    schedule = res ? JSON.parse(res.value) : [];
+  } catch (e) { schedule = []; }
+
+  if (codes.length === 0) {
+    codes = [{ id: uid(), content: '', code: '' }];
+  }
+  renderAll();
+}
+
+async function saveCodes() {
+  try { await window.storage.set(CODES_KEY, JSON.stringify(codes), false); }
+  catch (e) { setStatus('codeStatus', '保存に失敗しました', true); }
+}
+async function saveHistory() {
+  try { await window.storage.set(HISTORY_KEY, JSON.stringify(history), false); }
+  catch (e) { setStatus('historyStatus', '保存に失敗しました', true); }
+}
+async function saveSchedule() {
+  try { await window.storage.set(SCHEDULE_KEY, JSON.stringify(schedule), false); }
+  catch (e) { setStatus('scheduleStatus', '保存に失敗しました', true); }
+}
+
+function renderAll() {
+  renderCodes();
+  renderCodeSelect('historyCodeSelect');
+  renderCodeSelect('scheduleCodeSelect');
+  renderHistory();
+  renderSchedule();
+}
+
+/* ---------- occurrence numbering (shared between history & schedule) ---------- */
+function computeOccurrenceMap() {
+  const combined = [];
+  history.forEach(h => combined.push({
+    code: h.code,
+    key: h.datetime ? new Date(h.datetime).getTime() : h.createdAt,
+    type: 'history',
+    id: h.id
+  }));
+  schedule.forEach(s => combined.push({
+    code: s.code,
+    key: s.expiry ? new Date(s.expiry).getTime() : s.createdAt,
+    type: 'schedule',
+    id: s.id
+  }));
+  const grouped = {};
+  combined.forEach(item => {
+    if (!item.code) return;
+    if (!grouped[item.code]) grouped[item.code] = [];
+    grouped[item.code].push(item);
+  });
+  const occMap = {};
+  Object.keys(grouped).forEach(code => {
+    const arr = grouped[code].sort((a, b) => a.key - b.key);
+    arr.forEach((item, idx) => { occMap[item.type + '-' + item.id] = idx + 1; });
+  });
+  return occMap;
+}
+
+/* ---------- コード一覧 ---------- */
+function renderCodes() {
+  const tbody = document.getElementById('codeTableBody');
+  const emptyMsg = document.getElementById('codeEmptyMsg');
+  tbody.innerHTML = '';
+  emptyMsg.style.display = codes.length === 0 ? 'block' : 'none';
+
+  codes.forEach((row) => {
+    const tr = document.createElement('tr');
+
+    const tdContent = document.createElement('td');
+    const contentInput = document.createElement('input');
+    contentInput.type = 'text';
+    contentInput.placeholder = '例: 24時間データ使い放題';
+    contentInput.value = row.content;
+    contentInput.addEventListener('input', () => {
+      row.content = contentInput.value;
+      saveCodes();
+      renderCodeSelect('historyCodeSelect');
+      renderCodeSelect('scheduleCodeSelect');
+      renderHistory();
+      renderSchedule();
+    });
+    tdContent.appendChild(contentInput);
+
+    const tdCode = document.createElement('td');
+    const codeCell = document.createElement('div');
+    codeCell.className = 'code-cell';
+    const codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.placeholder = 'コードを入力';
+    codeInput.value = row.code;
+    codeInput.addEventListener('input', () => {
+      row.code = codeInput.value;
+      saveCodes();
+      renderCodeSelect('historyCodeSelect');
+      renderCodeSelect('scheduleCodeSelect');
+      renderHistory();
+      renderSchedule();
+    });
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.textContent = 'コピー';
+    copyBtn.addEventListener('click', async () => {
+      if (!row.code) return;
+      try { await navigator.clipboard.writeText(row.code); }
+      catch (e) { codeInput.select(); document.execCommand('copy'); }
+      copyBtn.textContent = 'コピー済';
+      copyBtn.classList.add('copied');
+      setTimeout(() => { copyBtn.textContent = 'コピー'; copyBtn.classList.remove('copied'); }, 1200);
+    });
+    codeCell.appendChild(codeInput);
+    codeCell.appendChild(copyBtn);
+    tdCode.appendChild(codeCell);
+
+    const tdDel = document.createElement('td');
+    tdDel.className = 'col-del';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '✕';
+    delBtn.title = '削除';
+    delBtn.addEventListener('click', () => {
+      codes = codes.filter(c => c.id !== row.id);
+      saveCodes();
+      renderCodes();
+      renderCodeSelect('historyCodeSelect');
+      renderCodeSelect('scheduleCodeSelect');
+    });
+    tdDel.appendChild(delBtn);
+
+    tr.appendChild(tdContent);
+    tr.appendChild(tdCode);
+    tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCodeSelect(selectId) {
+  const select = document.getElementById(selectId);
+  const prevValue = select.value;
+  select.innerHTML = '';
+  const usable = codes.filter(c => c.code);
+  if (usable.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '登録されたコードがありません';
+    select.appendChild(opt);
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  usable.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = (c.content ? c.content : '(内容未入力)') + ' — ' + c.code;
+    select.appendChild(opt);
+  });
+  if (usable.some(c => c.id === prevValue)) select.value = prevValue;
+}
+
+function buildCodeSelectElement(currentCodeId, onChange) {
+  const select = document.createElement('select');
+  const usable = codes.filter(c => c.code);
+  usable.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = (c.content ? c.content : '(内容未入力)') + ' — ' + c.code;
+    select.appendChild(opt);
+  });
+  if (usable.some(c => c.id === currentCodeId)) select.value = currentCodeId;
+  select.addEventListener('change', () => onChange(select.value));
+  return select;
+}
+
+/* ---------- 使用履歴 ---------- */
+function renderHistory() {
+  const tbody = document.getElementById('historyTableBody');
+  const emptyMsg = document.getElementById('historyEmptyMsg');
+  tbody.innerHTML = '';
+  emptyMsg.style.display = history.length === 0 ? 'block' : 'none';
+  if (history.length === 0) return;
+
+  const occMap = computeOccurrenceMap();
+
+  const sortedDesc = [...history].sort((a, b) => {
+    const ka = a.datetime ? new Date(a.datetime).getTime() : a.createdAt;
+    const kb = b.datetime ? new Date(b.datetime).getTime() : b.createdAt;
+    return kb - ka;
+  });
+
+  sortedDesc.forEach(item => {
+    const tr = document.createElement('tr');
+
+    // 日時
+    const tdDate = document.createElement('td');
+    const dtInput = document.createElement('input');
+    dtInput.type = 'datetime-local';
+    dtInput.value = item.datetime || '';
+    dtInput.addEventListener('change', () => {
+      item.datetime = dtInput.value;
+      saveHistory();
+      renderHistory();
+    });
+    tdDate.appendChild(dtInput);
+
+    // 内容 + コード（同じセレクトで編集可能）
+    const tdContent = document.createElement('td');
+    tdContent.textContent = item.content || '(内容未入力)';
+
+    const tdCode = document.createElement('td');
+    const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
+      const c = codes.find(x => x.id === newCodeId);
+      if (!c) return;
+      item.codeId = c.id;
+      item.content = c.content;
+      item.code = c.code;
+      saveHistory();
+      renderHistory();
+    });
+    tdCode.appendChild(codeSelect);
+
+    // 期限
+    const tdExpiry = document.createElement('td');
+    const expiryInput = document.createElement('input');
+    expiryInput.type = 'date';
+    expiryInput.value = item.expiry || '';
+    expiryInput.addEventListener('change', () => {
+      item.expiry = expiryInput.value;
+      saveHistory();
+    });
+    tdExpiry.appendChild(expiryInput);
+
+    // 回数
+    const tdOcc = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    const occ = occMap['history-' + item.id] || '?';
+    badge.textContent = occ + '回目';
+    tdOcc.appendChild(badge);
+
+    // 削除
+    const tdDel = document.createElement('td');
+    tdDel.className = 'col-del';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '✕';
+    delBtn.title = '削除';
+    delBtn.addEventListener('click', () => {
+      history = history.filter(h => h.id !== item.id);
+      saveHistory();
+      renderHistory();
+      renderSchedule();
+    });
+    tdDel.appendChild(delBtn);
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdContent);
+    tr.appendChild(tdCode);
+    tr.appendChild(tdExpiry);
+    tr.appendChild(tdOcc);
+    tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('addHistoryBtn').addEventListener('click', () => {
+  const select = document.getElementById('historyCodeSelect');
+  const dtInput = document.getElementById('historyDatetime');
+  const expiryInput = document.getElementById('historyExpiry');
+  if (!select.value) {
+    setStatus('historyStatus', 'コードを選択してください', true);
+    return;
+  }
+  const chosen = codes.find(c => c.id === select.value);
+  if (!chosen) return;
+  history.push({
+    id: uid(),
+    codeId: chosen.id,
+    content: chosen.content,
+    code: chosen.code,
+    datetime: dtInput.value || '',
+    expiry: expiryInput.value || '',
+    createdAt: Date.now()
+  });
+  saveHistory();
+  renderHistory();
+  renderSchedule();
+  dtInput.value = '';
+  expiryInput.value = '';
+  setStatus('historyStatus', '記録しました');
+});
+
+/* ---------- 使用予定 ---------- */
+function renderSchedule() {
+  const tbody = document.getElementById('scheduleTableBody');
+  const emptyMsg = document.getElementById('scheduleEmptyMsg');
+  tbody.innerHTML = '';
+  emptyMsg.style.display = schedule.length === 0 ? 'block' : 'none';
+  if (schedule.length === 0) return;
+
+  const occMap = computeOccurrenceMap();
+
+  const sortedAsc = [...schedule].sort((a, b) => {
+    const ka = a.expiry ? new Date(a.expiry).getTime() : a.createdAt;
+    const kb = b.expiry ? new Date(b.expiry).getTime() : b.createdAt;
+    return ka - kb;
+  });
+
+  sortedAsc.forEach(item => {
+    const tr = document.createElement('tr');
+
+    // 期限
+    const tdExpiry = document.createElement('td');
+    const expiryInput = document.createElement('input');
+    expiryInput.type = 'date';
+    expiryInput.value = item.expiry || '';
+    expiryInput.addEventListener('change', () => {
+      item.expiry = expiryInput.value;
+      saveSchedule();
+      renderSchedule();
+    });
+    tdExpiry.appendChild(expiryInput);
+
+    // 内容
+    const tdContent = document.createElement('td');
+    tdContent.textContent = item.content || '(内容未入力)';
+
+    // コード（編集可能）
+    const tdCode = document.createElement('td');
+    const codeSelect = buildCodeSelectElement(item.codeId, (newCodeId) => {
+      const c = codes.find(x => x.id === newCodeId);
+      if (!c) return;
+      item.codeId = c.id;
+      item.content = c.content;
+      item.code = c.code;
+      saveSchedule();
+      renderSchedule();
+    });
+    tdCode.appendChild(codeSelect);
+
+    // メモ
+    const tdMemo = document.createElement('td');
+    const memoInput = document.createElement('input');
+    memoInput.type = 'text';
+    memoInput.placeholder = 'メモ';
+    memoInput.value = item.memo || '';
+    memoInput.addEventListener('input', () => {
+      item.memo = memoInput.value;
+      saveSchedule();
+    });
+    tdMemo.appendChild(memoInput);
+
+    // 回数（予定）
+    const tdOcc = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge pending';
+    const occ = occMap['schedule-' + item.id] || '?';
+    badge.textContent = occ + '回目';
+    tdOcc.appendChild(badge);
+
+    // 操作: 履歴へ移動 / 削除
+    const tdActions = document.createElement('td');
+    tdActions.className = 'col-actions';
+    const actionWrap = document.createElement('div');
+    actionWrap.style.display = 'flex';
+    actionWrap.style.gap = '4px';
+    actionWrap.style.justifyContent = 'center';
+
+    const moveBtn = document.createElement('button');
+    moveBtn.className = 'btn-move';
+    moveBtn.textContent = '履歴へ';
+    moveBtn.title = '使用履歴に移動（使用日時は現在時刻になります。移動後に編集できます）';
+    moveBtn.addEventListener('click', () => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      const nowLocal = now.toISOString().slice(0, 16);
+      history.push({
+        id: uid(),
+        codeId: item.codeId,
+        content: item.content,
+        code: item.code,
+        datetime: nowLocal,
+        expiry: item.expiry || '',
+        createdAt: Date.now()
+      });
+      schedule = schedule.filter(s => s.id !== item.id);
+      saveHistory();
+      saveSchedule();
+      renderHistory();
+      renderSchedule();
+      setStatus('scheduleStatus', '使用履歴に移動しました');
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '✕';
+    delBtn.title = '削除';
+    delBtn.addEventListener('click', () => {
+      schedule = schedule.filter(s => s.id !== item.id);
+      saveSchedule();
+      renderSchedule();
+      renderHistory();
+    });
+
+    actionWrap.appendChild(moveBtn);
+    actionWrap.appendChild(delBtn);
+    tdActions.appendChild(actionWrap);
+
+    tr.appendChild(tdExpiry);
+    tr.appendChild(tdContent);
+    tr.appendChild(tdCode);
+    tr.appendChild(tdMemo);
+    tr.appendChild(tdOcc);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('addScheduleBtn').addEventListener('click', () => {
+  const select = document.getElementById('scheduleCodeSelect');
+  const expiryInput = document.getElementById('scheduleExpiry');
+  const memoInput = document.getElementById('scheduleMemo');
+  if (!select.value) {
+    setStatus('scheduleStatus', 'コードを選択してください', true);
+    return;
+  }
+  const chosen = codes.find(c => c.id === select.value);
+  if (!chosen) return;
+  schedule.push({
+    id: uid(),
+    codeId: chosen.id,
+    content: chosen.content,
+    code: chosen.code,
+    expiry: expiryInput.value || '',
+    memo: memoInput.value || '',
+    createdAt: Date.now()
+  });
+  saveSchedule();
+  renderSchedule();
+  renderHistory();
+  expiryInput.value = '';
+  memoInput.value = '';
+  setStatus('scheduleStatus', '追加しました');
+});
+
+/* ---------- 共通 ---------- */
+document.getElementById('addCodeBtn').addEventListener('click', () => {
+  codes.push({ id: uid(), content: '', code: '' });
+  saveCodes();
+  renderCodes();
+  renderCodeSelect('historyCodeSelect');
+  renderCodeSelect('scheduleCodeSelect');
+});
+
+/* ---------- エクスポート / インポート ---------- */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const data = { codes, history, schedule, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const pad = n => String(n).padStart(2, '0');
+  const d = new Date();
+  a.href = url;
+  a.download = `povo-data-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      if (!parsed || typeof parsed !== 'object') throw new Error('invalid');
+      const ok = confirm('現在のデータを上書きしてインポートします。よろしいですか？');
+      if (!ok) return;
+      codes = Array.isArray(parsed.codes) ? parsed.codes : [];
+      history = Array.isArray(parsed.history) ? parsed.history : [];
+      schedule = Array.isArray(parsed.schedule) ? parsed.schedule : [];
+      // 古い形式や不足フィールドを補完
+      history.forEach(h => { if (!h.createdAt) h.createdAt = Date.now(); if (h.expiry === undefined) h.expiry = ''; });
+      schedule.forEach(s => { if (!s.createdAt) s.createdAt = Date.now(); if (s.memo === undefined) s.memo = ''; if (s.expiry === undefined) s.expiry = ''; });
+      if (codes.length === 0) codes = [{ id: uid(), content: '', code: '' }];
+      await saveCodes();
+      await saveHistory();
+      await saveSchedule();
+      renderAll();
+      setStatus('codeStatus', 'インポートしました');
+    } catch (err) {
+      alert('ファイルの読み込みに失敗しました。正しいJSONファイルを選択してください。');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+loadData();
+</script>
+</body>
+</html>
